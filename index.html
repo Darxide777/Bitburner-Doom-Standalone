@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOOM - Standalone Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            font-family: monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        #game-container {
+            width: 100%;
+            max-width: 900px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <script src="doom.js"></script>
+    <script>
+        // Auto-start the game in browser
+        (async () => {
+            // Check if we're in a browser environment
+            if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+                // Load external files
+                const mapResponse = await fetch('map.txt');
+                const mapData = await mapResponse.text();
+                
+                const audioResponse = await fetch('audio.json');
+                const audioData = await audioResponse.json();
+                
+                // Create a mock ns object for the game
+                const mockNs = {
+                    read: (filename) => {
+                        if (filename === 'map.txt') return mapData;
+                        if (filename === 'audio.json') return JSON.stringify(audioData);
+                        return '';
+                    },
+                    disableLog: () => {},
+                    tprint: (msg) => console.log(msg),
+                    sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
+                    write: () => {},
+                    exec: () => {}
+                };
+                
+                // Run the game
+                await main(mockNs);
+            }
+        })();
+    </script>
+</body>
+</html>
