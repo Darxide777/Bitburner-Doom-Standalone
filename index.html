@@ -23,30 +23,62 @@
             width: 100%;
             max-width: 900px;
         }
+        #debug-log {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #0f0;
+            font-family: monospace;
+            font-size: 10px;
+            max-width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #0f0;
+            z-index: 99999;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
     <div id="game-container"></div>
+    <div id="debug-log"></div>
     
     <!-- Load the BitBurner adapter -->
     <script src="bitburner-adapter.js"></script>
     
     <!-- Initialize the game after adapter loads -->
     <script>
+        const debugLog = document.getElementById('debug-log');
+        
+        function log(msg) {
+            console.log(msg);
+            debugLog.textContent += msg + '\n';
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+        
         // Wait a moment to ensure adapter is loaded
         setTimeout(async () => {
             try {
-                console.log('Starting game...');
+                log('Starting game...');
+                log('executeDoomJs type: ' + typeof window.executeDoomJs);
+                
                 if (typeof window.executeDoomJs !== 'function') {
                     throw new Error('executeDoomJs not found on window object');
                 }
+                
+                log('Calling executeDoomJs...');
                 await window.executeDoomJs();
+                log('Game started!');
             } catch (error) {
-                console.error('Failed to start game:', error);
+                log('ERROR: ' + error.message);
+                log('Stack: ' + error.stack);
                 document.body.innerHTML = `<div style="color: #f00; text-align: center; padding: 20px;">
                     <h1>Error Loading Game</h1>
                     <p>${error.message}</p>
-                    <p>Check the browser console for details.</p>
+                    <p style="font-size: 12px; white-space: pre-wrap;">${error.stack}</p>
                 </div>`;
             }
         }, 100);
