@@ -34,9 +34,20 @@ async function fetchFromGitHub(filename) {
 }
 
 /**
+ * Pre-load map and audio files
+ */
+async function preloadFiles() {
+  await fetchFromGitHub('map.txt');
+  await fetchFromGitHub('audio.json');
+}
+
+/**
  * Create a mock ns object for browser environment
  */
 async function createMockNs() {
+  // Pre-load files first
+  await preloadFiles();
+  
   return {
     disableLog: () => {},
     
@@ -44,10 +55,12 @@ async function createMockNs() {
       console.log(msg);
     },
     
-    read: async (filename) => {
-      if (isBrowser) {
-        return await fetchFromGitHub(filename);
+    read: (filename) => {
+      // Return synchronously from cache
+      if (fileCache[filename]) {
+        return fileCache[filename];
       }
+      console.warn(`File not cached: ${filename}`);
       return '';
     },
     
@@ -89,15 +102,21 @@ async function getNs() {
  */
 async function executeDoomJs() {
   try {
+    console.log('Fetching doom.js...');
+    
     // Fetch doom.js
     const response = await fetch('https://raw.githubusercontent.com/Darxide777/Bitburner-Doom/main/doom.js');
     let code = await response.text();
     
+    console.log('doom.js fetched, preparing to execute...');
+    
     // Remove the "export" keyword to make it work in eval
     code = code.replace(/export\s+async\s+function\s+main/, 'async function main');
     
-    // Get the ns object
+    // Get the ns object (which preloads files)
     const ns = await getNs();
+    
+    console.log('Creating sandbox...');
     
     // Create a sandbox with the ns object and common functions
     const sandbox = {
@@ -117,12 +136,16 @@ async function executeDoomJs() {
       AudioContext: window.AudioContext || window.webkitAudioContext,
       document,
       window,
-      eval: eval, // Allow eval if needed within the code
+      eval: eval,
     };
+    
+    console.log('Executing doom.js...');
     
     // Execute the code in the sandbox
     const fn = new Function(...Object.keys(sandbox), code + '; return main;');
     const main = fn(...Object.values(sandbox));
+    
+    console.log('Running main function...');
     
     // Run the main function
     await main(ns);
