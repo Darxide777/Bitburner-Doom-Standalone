@@ -1,17 +1,10 @@
-# DOOM - Standalone JavaScript Edition
+# Bitburner DOOM - Standalone Edition
 
-A pure JavaScript implementation of a DOOM-like ASCII raycasting engine that runs in both the browser and Bitburner.
+Play DOOM in your browser! No downloads, no setup required.
 
-## How to Play (Browser)
+## Play Now
 
-1. Open `index.html` in your web browser
-2. Press ENTER to start the game
-3. Use WASD to move, mouse/arrow keys to turn, SPACE to shoot
-
-## How to Play (Bitburner)
-
-1. Download `doom.js`, `map.txt`, and `audio.json`
-2. Run `doom.js` in Bitburner's terminal
+**[Open Game](https://raw.githack.com/Darxide777/Bitburner-Doom-Standalone/main/index.html)**
 
 ## Controls
 
@@ -21,31 +14,22 @@ A pure JavaScript implementation of a DOOM-like ASCII raycasting engine that run
 - **D/→** - Turn Right
 - **Q/E** - Strafe Left/Right
 - **F** - Use Door
-- **SPACE** - Shoot
-- **1/2/3** - Switch Weapons (Pistol/Shotgun/Chaingun)
-- **TAB** - Toggle Minimap
+- **Space** - Shoot
+- **1/2/3** - Switch Weapon (Pistol/Shotgun/Chaingun)
+- **Tab** - Toggle Minimap
 - **ESC** - Quit
 
-## Map Key
+## Features
 
-- `a` = Ammo
-- `h` = Health
-- `P` = Player Start
-- `i` = Imp
-- `c` = Cacodemon
-- `Y` = Cyberdemon
-- `d` = Demon
-- `z` = Zombie
-- `l` = Lost Soul
-- `D` = Door
-- `K` = Locked Door (requires Blue Key)
-- `E` = Exit
-- `#` = Wall
-- `.` = Floor
+- Full ASCII raycasting engine
+- Multiple enemy types with AI
+- Three weapons with different firing patterns
+- Doors, keys, and secrets to discover
+- Dynamic lighting and sprite rendering
+- Authentic DOOM sound effects and music
 
-## Files
+## About
 
-- `index.html` - Browser entry point
-- `doom.js` - Main game logic (works in both browser and Bitburner)
-- `map.txt` - Game map
-- `audio.json` - Sound effects and music (base64 encoded)
+This is a browser-based port of the BitBurner DOOM game. The standalone version automatically fetches the latest game code from the main repository, so it always stays up-to-date!
+
+Works on desktop and mobile browsers.
