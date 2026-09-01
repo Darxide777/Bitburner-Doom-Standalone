@@ -84,7 +84,32 @@ async function getNs() {
   }
 }
 
+/**
+ * Clean and execute doom.js code
+ */
+async function executeDoomJs() {
+  try {
+    // Fetch doom.js
+    const response = await fetch('https://raw.githubusercontent.com/Darxide777/Bitburner-Doom/main/doom.js');
+    let code = await response.text();
+    
+    // Remove the "export" keyword to make it work in eval
+    code = code.replace(/export\s+async\s+function\s+main/, 'async function main');
+    
+    // Get the ns object
+    const ns = await getNs();
+    
+    // Execute the code
+    eval(code);
+    
+    // Run the main function
+    await main(ns);
+    
+  } catch (error) {
+    console.error('Failed to execute game:', error);
+    throw error;
+  }
+}
+
 // Export for use in HTML
-window.getBitBurnerAdapter = async () => {
-  return await getNs();
-};
+window.executeDoomJs = executeDoomJs;
