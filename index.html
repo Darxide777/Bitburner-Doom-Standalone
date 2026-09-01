@@ -28,14 +28,18 @@
 <body>
     <div id="game-container"></div>
     
-    <!-- Load the BitBurner adapter first -->
+    <!-- Load the BitBurner adapter -->
     <script src="bitburner-adapter.js"></script>
     
-    <!-- Initialize the game -->
+    <!-- Initialize the game after adapter loads -->
     <script>
-        (async () => {
+        // Wait a moment to ensure adapter is loaded
+        setTimeout(async () => {
             try {
-                // Execute the game using the adapter
+                console.log('Starting game...');
+                if (typeof window.executeDoomJs !== 'function') {
+                    throw new Error('executeDoomJs not found on window object');
+                }
                 await window.executeDoomJs();
             } catch (error) {
                 console.error('Failed to start game:', error);
@@ -45,7 +49,7 @@
                     <p>Check the browser console for details.</p>
                 </div>`;
             }
-        })();
+        }, 100);
     </script>
 </body>
 </html>
