@@ -3,9 +3,14 @@
  * Provides a compatibility layer so doom.js works in both BitBurner and browser environments
  */
 
+console.log('Adapter loading...');
+
 // Detect environment
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
 const isBitBurner = typeof ns !== 'undefined' && ns && typeof ns.read === 'function';
+
+console.log('Is Browser:', isBrowser);
+console.log('Is BitBurner:', isBitBurner);
 
 // GitHub raw content URLs for fetching files
 const GITHUB_RAW = 'https://raw.githubusercontent.com/Darxide777/Bitburner-Doom/main';
@@ -17,7 +22,9 @@ const fileCache = {};
  * Fetch a file from GitHub
  */
 async function fetchFromGitHub(filename) {
+  console.log('Fetching:', filename);
   if (fileCache[filename]) {
+    console.log('Found in cache:', filename);
     return fileCache[filename];
   }
   
@@ -26,6 +33,7 @@ async function fetchFromGitHub(filename) {
     if (!response.ok) throw new Error(`Failed to fetch ${filename}`);
     const content = await response.text();
     fileCache[filename] = content;
+    console.log('Fetched and cached:', filename, 'size:', content.length);
     return content;
   } catch (error) {
     console.error(`Error fetching ${filename}:`, error);
@@ -37,14 +45,17 @@ async function fetchFromGitHub(filename) {
  * Pre-load map and audio files
  */
 async function preloadFiles() {
+  console.log('Preloading files...');
   await fetchFromGitHub('map.txt');
   await fetchFromGitHub('audio.json');
+  console.log('Files preloaded');
 }
 
 /**
  * Create a mock ns object for browser environment
  */
 async function createMockNs() {
+  console.log('Creating mock ns...');
   // Pre-load files first
   await preloadFiles();
   
@@ -52,7 +63,7 @@ async function createMockNs() {
     disableLog: () => {},
     
     tprint: (msg) => {
-      console.log(msg);
+      console.log('[TPRINT]', msg);
     },
     
     read: (filename) => {
@@ -88,9 +99,12 @@ async function createMockNs() {
  * Get or create the ns object
  */
 async function getNs() {
+  console.log('Getting ns...');
   if (isBitBurner) {
+    console.log('Using BitBurner ns');
     return ns; // Use BitBurner's native ns
   } else if (isBrowser) {
+    console.log('Creating mock ns for browser');
     return await createMockNs(); // Create mock ns for browser
   } else {
     throw new Error('Unknown environment: not BitBurner and not Browser');
@@ -102,16 +116,20 @@ async function getNs() {
  */
 async function executeDoomJs() {
   try {
+    console.log('executeDoomJs called');
     console.log('Fetching doom.js...');
     
     // Fetch doom.js
     const response = await fetch('https://raw.githubusercontent.com/Darxide777/Bitburner-Doom/main/doom.js');
     let code = await response.text();
     
-    console.log('doom.js fetched, preparing to execute...');
+    console.log('doom.js fetched, size:', code.length);
+    console.log('Removing export keyword...');
     
     // Remove the "export" keyword to make it work in eval
     code = code.replace(/export\s+async\s+function\s+main/, 'async function main');
+    
+    console.log('Getting ns object...');
     
     // Get the ns object (which preloads files)
     const ns = await getNs();
@@ -139,16 +157,19 @@ async function executeDoomJs() {
       eval: eval,
     };
     
-    console.log('Executing doom.js...');
+    console.log('Executing doom.js code...');
     
     // Execute the code in the sandbox
     const fn = new Function(...Object.keys(sandbox), code + '; return main;');
     const main = fn(...Object.values(sandbox));
     
+    console.log('Main function created, type:', typeof main);
     console.log('Running main function...');
     
     // Run the main function
     await main(ns);
+    
+    console.log('Game finished');
     
   } catch (error) {
     console.error('Failed to execute game:', error);
@@ -158,3 +179,4 @@ async function executeDoomJs() {
 
 // Export for use in HTML
 window.executeDoomJs = executeDoomJs;
+console.log('Adapter loaded, executeDoomJs available:', typeof window.executeDoomJs);
