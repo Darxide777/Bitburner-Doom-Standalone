@@ -99,8 +99,30 @@ async function executeDoomJs() {
     // Get the ns object
     const ns = await getNs();
     
-    // Execute the code
-    eval(code);
+    // Create a sandbox with the ns object and common functions
+    const sandbox = {
+      ns,
+      Math,
+      Date,
+      String,
+      Array,
+      Object,
+      JSON,
+      console,
+      setTimeout,
+      setInterval,
+      clearTimeout,
+      clearInterval,
+      fetch,
+      AudioContext: window.AudioContext || window.webkitAudioContext,
+      document,
+      window,
+      eval: eval, // Allow eval if needed within the code
+    };
+    
+    // Execute the code in the sandbox
+    const fn = new Function(...Object.keys(sandbox), code + '; return main;');
+    const main = fn(...Object.values(sandbox));
     
     // Run the main function
     await main(ns);
