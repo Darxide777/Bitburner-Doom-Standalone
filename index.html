@@ -27,35 +27,29 @@
 </head>
 <body>
     <div id="game-container"></div>
+    
+    <!-- Load the BitBurner adapter first -->
+    <script src="bitburner-adapter.js"></script>
+    
+    <!-- Load the original doom.js (unchanged) -->
     <script src="doom.js"></script>
+    
+    <!-- Initialize the game -->
     <script>
-        // Auto-start the game in browser
         (async () => {
-            // Check if we're in a browser environment
-            if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-                // Load external files
-                const mapResponse = await fetch('map.txt');
-                const mapData = await mapResponse.text();
+            try {
+                // Get the ns object from the adapter
+                const ns = await window.getBitBurnerAdapter();
                 
-                const audioResponse = await fetch('audio.json');
-                const audioData = await audioResponse.json();
-                
-                // Create a mock ns object for the game
-                const mockNs = {
-                    read: (filename) => {
-                        if (filename === 'map.txt') return mapData;
-                        if (filename === 'audio.json') return JSON.stringify(audioData);
-                        return '';
-                    },
-                    disableLog: () => {},
-                    tprint: (msg) => console.log(msg),
-                    sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
-                    write: () => {},
-                    exec: () => {}
-                };
-                
-                // Run the game
-                await main(mockNs);
+                // Run the game with the adapted ns object
+                await main(ns);
+            } catch (error) {
+                console.error('Failed to start game:', error);
+                document.body.innerHTML = `<div style="color: #f00; text-align: center; padding: 20px;">
+                    <h1>Error Loading Game</h1>
+                    <p>${error.message}</p>
+                    <p>Check the browser console for details.</p>
+                </div>`;
             }
         })();
     </script>
