@@ -31,17 +31,21 @@
     <!-- Load the BitBurner adapter first -->
     <script src="bitburner-adapter.js"></script>
     
-    <!-- Load the original doom.js (unchanged) -->
-    <script src="doom.js"></script>
-    
     <!-- Initialize the game -->
     <script>
         (async () => {
             try {
+                // Fetch doom.js from the original BitBurner repo
+                const response = await fetch('https://raw.githubusercontent.com/Darxide777/Bitburner-Doom/main/doom.js');
+                const doomCode = await response.text();
+                
                 // Get the ns object from the adapter
                 const ns = await window.getBitBurnerAdapter();
                 
-                // Run the game with the adapted ns object
+                // Execute the fetched code
+                const main = eval('(async function() { ' + doomCode + '; return main; })()');
+                
+                // Run the game
                 await main(ns);
             } catch (error) {
                 console.error('Failed to start game:', error);
