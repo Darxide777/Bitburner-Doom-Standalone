@@ -23,7 +23,14 @@
             width: 100%;
             max-width: 900px;
         }
+        #status {
+            color: #e00;
+            text-align: center;
+            letter-spacing: 2px;
+            font-size: 14px;
+        }
         #debug-log {
+            display: none;   /* shown only with ?debug in the address */
             position: fixed;
             bottom: 10px;
             right: 10px;
@@ -43,45 +50,37 @@
     </style>
 </head>
 <body>
-    <div id="game-container"></div>
+    <div id="game-container"><div id="status">Loading...</div></div>
     <div id="debug-log"></div>
     
     <!-- Load the BitBurner adapter -->
     <script src="bitburner-adapter.js"></script>
     
-    <!-- Initialize the game after adapter loads -->
+    <!-- Start the game once the adapter has loaded. Add ?debug to the address to see a log box, ?base=<url> to load the
+         game files from somewhere other than the GitHub repo. -->
     <script>
         const debugLog = document.getElementById('debug-log');
-        
+        const params = new URLSearchParams(location.search);
+        if (params.has('debug')) debugLog.style.display = 'block';
+
         function log(msg) {
             console.log(msg);
             debugLog.textContent += msg + '\n';
             debugLog.scrollTop = debugLog.scrollHeight;
         }
-        
-        // Wait a moment to ensure adapter is loaded
-        setTimeout(async () => {
+
+        window.addEventListener('load', async () => {
             try {
-                log('Starting game...');
-                log('executeDoomJs type: ' + typeof window.executeDoomJs);
-                
-                if (typeof window.executeDoomJs !== 'function') {
-                    throw new Error('executeDoomJs not found on window object');
-                }
-                
-                log('Calling executeDoomJs...');
+                if (typeof window.executeDoomJs !== 'function') throw new Error('The game adapter did not load');
                 await window.executeDoomJs();
-                log('Game started!');
+                document.getElementById('status')?.remove();
             } catch (error) {
                 log('ERROR: ' + error.message);
-                log('Stack: ' + error.stack);
-                document.body.innerHTML = `<div style="color: #f00; text-align: center; padding: 20px;">
-                    <h1>Error Loading Game</h1>
-                    <p>${error.message}</p>
-                    <p style="font-size: 12px; white-space: pre-wrap;">${error.stack}</p>
-                </div>`;
+                document.body.innerHTML = '<div style="color:#f00;text-align:center;padding:20px;font-family:monospace">' +
+                    '<h1>Error Loading Game</h1><p></p><p style="font-size:12px">Check your connection and reload the page.</p></div>';
+                document.querySelector('p').textContent = error.message;
             }
-        }, 100);
+        });
     </script>
 </body>
 </html>

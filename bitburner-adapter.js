@@ -13,7 +13,15 @@ console.log('Is Browser:', isBrowser);
 console.log('Is BitBurner:', isBitBurner);
 
 // GitHub raw content URLs for fetching files
-const GITHUB_RAW = 'https://raw.githubusercontent.com/Darxide777/Bitburner-Doom/main';
+// (For testing you can point the page at another copy of the game files with ?base=<url>, e.g. a local web server.)
+const GITHUB_RAW = (new URLSearchParams(location.search).get('base') || 'https://raw.githubusercontent.com/Darxide777/Bitburner-Doom/main').replace(/\/$/, '');
+
+// Shows a status line on the page while the (large) game files download. Safe to call before the page has the element.
+function status(msg) {
+  console.log('[status]', msg);
+  const el = document.getElementById('status');
+  if (el) el.textContent = msg;
+}
 
 // File cache to avoid repeated fetches
 const fileCache = {};
@@ -22,49 +30,50 @@ const fileCache = {};
  * Fetch a file from GitHub
  */
 async function fetchFromGitHub(filename) {
-  console.log('Fetching:', filename);
-  if (fileCache[filename]) {
-    console.log('Found in cache:', filename);
-    return fileCache[filename];
-  }
-  
-  try {
-    const response = await fetch(`${GITHUB_RAW}/${filename}`);
-    if (!response.ok) throw new Error(`Failed to fetch ${filename}`);
-    const content = await response.text();
-    fileCache[filename] = content;
-    console.log('Fetched and cached:', filename, 'size:', content.length);
-    return content;
-  } catch (error) {
-    console.error(`Error fetching ${filename}:`, error);
-    return '';
-  }
+  if (fileCache[filename]) return fileCache[filename];
+  const response = await fetch(`${GITHUB_RAW}/${filename}`);
+  if (!response.ok) throw new Error(`Could not download ${filename} (HTTP ${response.status})`);
+  const content = await response.text();
+  fileCache[filename] = content;
+  console.log('Fetched and cached:', filename, 'size:', content.length);
+  return content;
 }
 
 /**
- * Pre-load map and audio files
+ * Pre-load every data file the game reads with ns.read(): the map, the sprites, the sounds, and any extra level maps
+ * that doom.js lists (the `map: 'something.txt'` entries). Missing files stop the game with a clear message instead of
+ * starting a broken game (no sprites / no sound).
  */
-async function preloadFiles() {
-  console.log('Preloading files...');
-  await fetchFromGitHub('map.txt');
+async function preloadFiles(code) {
+  const maps = new Set(['map.txt']);
+  for (const m of code.matchAll(/map:\s*'([^']+\.txt)'/g)) maps.add(m[1]);
+  status('Loading maps...');
+  for (const f of maps) await fetchFromGitHub(f);
+  status('Loading sprites...');
+  await fetchFromGitHub('sprites.json');
+  status('Loading sounds (about 24 MB, the first time only)...');
   await fetchFromGitHub('audio.json');
-  console.log('Files preloaded');
+  status('');
 }
 
 /**
  * Create a mock ns object for browser environment
  */
-async function createMockNs() {
-  console.log('Creating mock ns...');
-  // Pre-load files first
-  await preloadFiles();
-  
+async function createMockNs(code) {
+  await preloadFiles(code);
+
   return {
     disableLog: () => {},
     
+    // The game's terminal messages go to the console. (The "new version available, run install.js" notice is for the
+    // Bitburner version; this page always loads the newest code, so it is dropped.)
     tprint: (msg) => {
+      if (/run install\.js/i.test(String(msg))) return;
       console.log('[TPRINT]', msg);
     },
+    print: (msg) => console.log('[PRINT]', msg),
+    flags: (schema) => Object.fromEntries(schema.map(([k, v]) => [k, v])),
+    atExit: () => {},
     
     read: (filename) => {
       // Return synchronously from cache
@@ -98,14 +107,14 @@ async function createMockNs() {
 /**
  * Get or create the ns object
  */
-async function getNs() {
+async function getNs(code) {
   console.log('Getting ns...');
   if (isBitBurner) {
     console.log('Using BitBurner ns');
     return ns; // Use BitBurner's native ns
   } else if (isBrowser) {
     console.log('Creating mock ns for browser');
-    return await createMockNs(); // Create mock ns for browser
+    return await createMockNs(code); // Create mock ns for browser
   } else {
     throw new Error('Unknown environment: not BitBurner and not Browser');
   }
@@ -120,19 +129,21 @@ async function executeDoomJs() {
     console.log('Fetching doom.js...');
     
     // Fetch doom.js
-    const response = await fetch('https://raw.githubusercontent.com/Darxide777/Bitburner-Doom/main/doom.js');
+    status('Loading game...');
+    const response = await fetch(`${GITHUB_RAW}/doom.js`);
+    if (!response.ok) throw new Error(`Could not download doom.js (HTTP ${response.status})`);
     let code = await response.text();
     
     console.log('doom.js fetched, size:', code.length);
     console.log('Removing export keyword...');
     
     // Remove the "export" keyword to make it work in eval
-    code = code.replace(/export\s+async\s+function\s+main/, 'async function main');
+    code = code.replace(/^export\s+async\s+function\s+main/m, 'async function main');   // anchored to the line start: doom.js's header comment also contains this text
     
     console.log('Getting ns object...');
     
     // Get the ns object (which preloads files)
-    const ns = await getNs();
+    const ns = await getNs(code);
     
     console.log('Creating sandbox...');
     
