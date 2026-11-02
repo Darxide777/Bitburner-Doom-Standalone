@@ -33,6 +33,20 @@ browser keeps them. Press **Enter** at the title screen to start.
 - Seven weapons, armor, keys and locked doors, secrets, and an automap
 - Sound effects and music
 
+## Cheats
+
+Add them to the address, joined with `&`. For example:
+`https://raw.githack.com/Darxide777/Bitburner-Doom-Standalone/main/index.html?godmode&infiniteammo`
+
+| Option | Effect |
+|---|---|
+| `?godmode` | You take no damage |
+| `?infiniteammo` | Ammo never runs out |
+| `?allweapons` | Start with every weapon |
+| `?noautoswitch` | Don't switch weapons automatically when one runs dry |
+
+These are the same options the Bitburner version takes as `--godmode` and so on. Write `=0` to turn one off (`?godmode=0`).
+
 ## How it works
 
 The page loads the newest `doom.js`, `map.txt`, `sprites.json` and `audio.json` straight from the

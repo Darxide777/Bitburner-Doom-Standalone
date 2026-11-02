@@ -72,7 +72,14 @@ async function createMockNs(code) {
       console.log('[TPRINT]', msg);
     },
     print: (msg) => console.log('[PRINT]', msg),
-    flags: (schema) => Object.fromEntries(schema.map(([k, v]) => [k, v])),
+    // Cheats and options: in Bitburner they are flags (run doom.js --godmode). Here they come from the page address, e.g.
+    //   index.html?godmode&infiniteammo   (a flag counts as on unless written as =0 or =false, e.g. ?godmode=0)
+    // The schema is the game's own list of flags, so new flags work without changing this file.
+    flags: (schema) => {
+      const q = new URLSearchParams(location.search);
+      const on = k => q.has(k) && !['0', 'false', 'off', 'no'].includes(q.get(k).toLowerCase());
+      return { ...Object.fromEntries(schema.map(([k, v]) => [k, typeof v === 'boolean' ? on(k) : (q.has(k) ? q.get(k) : v)])), _: [] };
+    },
     atExit: () => {},
     
     read: (filename) => {
